@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RptDataSource xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="DBColaborador">
+  <ConnectionProperties>
+    <Extension>SQL</Extension>
+    <ConnectString>Data Source=JULIO\SQLEXPRESS;Initial Catalog=DBIndustriasJFTDS_II_26_I</ConnectString>
+  </ConnectionProperties>
+  <DataSourceID>8a927e5b-dc25-4f76-bf1c-a2e9c1534636</DataSourceID>
+</RptDataSource>

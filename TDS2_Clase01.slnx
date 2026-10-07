@@ -1,0 +1,14 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="DebugLocal" />
+    <BuildType Name="Release" />
+  </Configurations>
+  <Project Path="PIReportes/PIReportes.rptproj">
+    <Deploy Solution="Debug|*" />
+    <Deploy Solution="Release|*" />
+  </Project>
+  <Project Path="TDS2_Clase01/TDS2_Clase01.csproj">
+    <BuildType Solution="DebugLocal|*" Project="Debug" />
+  </Project>
+</Solution>

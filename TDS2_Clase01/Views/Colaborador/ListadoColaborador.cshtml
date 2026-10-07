@@ -1,0 +1,64 @@
+﻿@model IEnumerable<TDS2_Clase01.Models.Entidades.Colaborador>
+@inject IAuthorizationService AuthorizationService
+@using X.PagedList.Mvc.Core;
+@using X.PagedList;
+
+<section>
+
+<br />
+    @if ((await AuthorizationService.AuthorizeAsync(User, "AllowLayoutJefeAsistente")).Succeeded)
+    {
+        <a class="btn btn-success btn-sm" asp-action="Create">Create</a>
+        <a class="btn btn-success btn-sm" href="http://julio/ReportServer/Pages/ReportViewer.aspx?%2fPIReportes%2fRptColaborador&rs:Command=Render">Reporte</a>
+    }
+   
+<hr />
+<table class="table table-hover table-bordered table-sm">
+    <thead>
+        <tr>
+            <th><strong><center>Id</center></strong></th>
+            <th><strong><center>Nombres</center></strong></th>
+            <th><strong><center>Apellidos</center></strong></th>
+            <th><strong><center>DNI</center></strong></th>
+            <th><strong><center>Sexo</center></strong></th>
+            <th><strong><center>Direccion</center></strong></th>
+            <th><strong><center>Empresa</center></strong></th>
+            <th><strong><center>Opciones</center></strong></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var item in Model)
+        {
+            <tr>
+                <td align="center">@item.IdColaborador</td>
+                <td align="center">@item.Nombres</td>
+                <td align="center">@item.Apellidos</td>
+                <td align="center">@item.DNI</td>
+                <td align="center">@item.Sexo</td>
+                <td align="center">@item.Direccion</td>
+                <td align="center">@item.Empresa.RazonSocial</td>
+                <td align="center">
+                        @if ((await AuthorizationService.AuthorizeAsync(User, "AllowLayoutJefe")).Succeeded)
+                        {
+                            <a class="btn btn-info btn-sm text-white" asp-action="Edit" asp-route-id="@item.IdColaborador">Edit</a>
+                        }
+                        @if ((await AuthorizationService.AuthorizeAsync(User, "AllowLayoutJefeAsistente")).Succeeded)
+                        {
+                            <a class="btn btn-warning btn-sm text-white" asp-action="Details" asp-route-id="@item.IdColaborador">Details</a>
+                        }
+                        @if ((await AuthorizationService.AuthorizeAsync(User, "AllowLayoutJefe")).Succeeded)
+                        {
+                            <a class="btn btn-danger btn-sm text-white" asp-action="Delete" asp-route-id="@item.IdColaborador">Delete</a>
+                        }
+                    
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<div>
+    @Html.PagedListPager((IPagedList)Model,
+    page => Url.Action("ListadoColaborador", "Colaborador", new {page=page}), PagedListRenderOptions.MinimalWithItemCountText)
+</div>
+
+</section>

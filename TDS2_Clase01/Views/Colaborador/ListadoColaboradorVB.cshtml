@@ -1,0 +1,73 @@
+﻿@model IEnumerable<TDS2_Clase01.Models.Entidades.Colaborador>
+
+<br />
+<table class="table table-hover table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>
+                <center>
+                    <strong>
+                @Html.DisplayNameFor(Item=>Item.IdColaborador)
+                    </strong>
+                </center>
+            </th>
+            <th>
+                <center>
+                    <strong>
+                        @Html.DisplayNameFor(Item => Item.Nombres)
+                    </strong>
+                </center>
+            </th>
+            <th>
+                <center>
+                    <strong>
+                        @Html.DisplayNameFor(Item => Item.Apellidos)
+                    </strong>
+                </center>
+            </th>
+            <th>
+                <center>
+                    <strong>
+                        @Html.DisplayNameFor(Item => Item.DNI)
+                    </strong>
+                </center>
+            </th>
+            <th>
+                <center>
+                    <strong>
+                        @Html.DisplayNameFor(Item => Item.Sexo)
+                    </strong>
+                </center>
+            </th>
+            <th>
+                <center>
+                    <strong>
+                        @Html.DisplayNameFor(Item => Item.Direccion)
+                    </strong>
+                </center>
+            </th>
+            <th>
+                <center>
+                    <strong>
+                        @Html.DisplayNameFor(Item => Item.Empresa.RazonSocial)
+                    </strong>
+                </center>
+            </th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach(var db in ViewBag.Colaborador)
+        {
+            <tr>
+                <td align="center"> @db.IdColaborador </td>
+                <td align="center"> @db.Nombres </td>
+                <td align="center"> @db.Apellidos </td>
+                <td align="center"> @db.DNI </td>
+                <td align="center"> @db.Sexo </td>
+                <td align="center"> @db.Direccion </td>
+                <td align="center"> @db.Empresa.RazonSocial </td>
+            </tr>
+        }
+    </tbody>
+</table>
