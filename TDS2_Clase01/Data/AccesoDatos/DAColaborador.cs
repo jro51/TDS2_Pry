@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TDS2_Clase01.Data.Interface;
 using TDS2_Clase01.Models.Entidades;
 
@@ -6,58 +6,68 @@ namespace TDS2_Clase01.Data.AccesoDatos
 {
     public class DAColaborador : IDAColaborador
     {
+        private readonly ApplicationDbContext _db;
+
+        public DAColaborador(ApplicationDbContext db)
+        {
+            _db = db;
+        }
+
         public IEnumerable<Colaborador> GetColaborador()
         {
-            var Listado = new List<Colaborador>();
-            using (var db=new ApplicationDbContext())
-            {
-                Listado=db.Colaborador.Include(item => item.Empresa).ToList();
-            }
-
-            return Listado;
+            return _db.Colaborador
+                .AsNoTracking()
+                .Include(item => item.Empresa)
+                .ToList();
         }
 
         public int InsertColaborador(Colaborador Entidad)
         {
-            var resultado = 0;
-            using (var db = new ApplicationDbContext()) {
-                db.Add(Entidad); //Seleccionamos la fila del registro
-                db.SaveChanges(); //Guardamos en la bd
-                resultado = Entidad.IdColaborador;
-            }
-            return resultado;
+            _db.Colaborador.Add(Entidad);
+            _db.SaveChanges();
+            return Entidad.IdColaborador;
         }
 
-        public Colaborador GetIdColaborador(int id)
+        public Colaborador? GetIdColaborador(int id)
         {
-            var resultado = new Colaborador();
-            using (var db = new ApplicationDbContext())
+            // AsNoTracking: la entidad leída no queda rastreada y se puede
+            // adjuntar luego otra instancia con el mismo Id en UpdateColaborador.
+            return _db.Colaborador
+                .AsNoTracking()
+                .FirstOrDefault(item => item.IdColaborador == id);
+        }
+
+        public Boolean UpdateColaborador(Colaborador Entity)
+        {
+            var entry = _db.Colaborador.Attach(Entity);
+            try
             {
-                resultado = db.Colaborador.Where(item => item.IdColaborador == id).FirstOrDefault();
+                entry.State = EntityState.Modified;
+                // La fecha de registro nunca se sobrescribe.
+                entry.Property(item => item.FechaRegistro).IsModified = false;
+                return _db.SaveChanges() != 0;
             }
-            return resultado;
+            catch (DbUpdateConcurrencyException)
+            {
+                // El registro ya no existe.
+                return false;
+            }
+            finally
+            {
+                entry.State = EntityState.Detached;
+            }
         }
 
-        public Boolean UpdateColaborador(Colaborador Entity) {
-            var resultado = false;
-            using (var db = new ApplicationDbContext()) {
-                db.Colaborador.Attach(Entity);
-                db.Entry(Entity).State = EntityState.Modified;
-                db.Entry(Entity).Property(item => item.FechaRegistro).IsModified = false;
-                resultado = db.SaveChanges() != 0;
+        public Boolean DeleteColaborador(int id)
+        {
+            var entity = _db.Colaborador.Find(id);
+            if (entity is null)
+            {
+                return false;
             }
-            return resultado;
-        }
 
-        public Boolean DeleteColaborador(int id) {
-            var resultado = false;
-            using (var db = new ApplicationDbContext()) {
-                var entity = new Colaborador() { IdColaborador = id};
-                db.Colaborador.Attach(entity);
-                db.Colaborador.Remove(entity);
-                resultado = db.SaveChanges() != 0;
-            }
-            return resultado;
+            _db.Colaborador.Remove(entity);
+            return _db.SaveChanges() != 0;
         }
     }
 }
