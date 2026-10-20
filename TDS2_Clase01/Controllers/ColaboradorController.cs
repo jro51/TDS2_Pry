@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TDS2_Clase01.Data.AccesoDatos;
 using TDS2_Clase01.Data.Interface;
 using TDS2_Clase01.Models.Entidades;
 using X.PagedList.Extensions;
@@ -10,114 +9,118 @@ namespace TDS2_Clase01.Controllers
     [Authorize]
     public class ColaboradorController : Controller
     {
-        private readonly IDAColaborador DAColaborador;
-        private readonly IDAEmpresa DAEmpresa;
+        private const int TamanoPagina = 8;
+
+        private readonly IDAColaborador _daColaborador;
+        private readonly IDAEmpresa _daEmpresa;
 
         public ColaboradorController(IDAColaborador daColaborador, IDAEmpresa daEmpresa)
         {
-            DAColaborador = daColaborador;
-            DAEmpresa = daEmpresa;
+            _daColaborador = daColaborador;
+            _daEmpresa = daEmpresa;
         }
 
-
-
-        public IActionResult ListadoColaborador(int page=1)
+        public IActionResult ListadoColaborador(int page = 1)
         {
-            var pageNumber = page;
-            var modelo = DAColaborador.GetColaborador();
-            //var model = new DAColaborador();
-            //var listado = model.GetColaborador();
-            var listado = modelo.OrderByDescending(x => x.IdColaborador).ToList().ToPagedList(pageNumber, 8);
+            var listado = _daColaborador.GetColaborador()
+                .OrderByDescending(x => x.IdColaborador)
+                .ToList()
+                .ToPagedList(Math.Max(page, 1), TamanoPagina);
             return View(listado);
         }
 
         public IActionResult ListadoColaboradorVB()
         {
-
-            //var model = new DAColaborador();
-            //ViewBag.Colaborador = model.GetColaborador();
-            ViewBag.Colaborador = DAColaborador.GetColaborador();
+            ViewBag.Colaborador = _daColaborador.GetColaborador();
             return View();
         }
 
         public IActionResult Create()
         {
-            //var ObjEmp = new DAEmpresa();
-            //ViewBag.ObjEmp = ObjEmp.GetEmpresa();
-            ViewBag.ObjEmp = DAEmpresa.GetEmpresa();
+            ViewBag.ObjEmp = _daEmpresa.GetEmpresa();
             return View();
         }
 
         [HttpPost]
-        public IActionResult Create(Colaborador Entidad)
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(Colaborador entidad)
         {
-            Entidad.FechaRegistro = DateTime.Now;
-            //var ObjCreate = new DAColaborador();
-            //var model = ObjCreate.InsertColaborador(Entidad);
-            var model = DAColaborador.InsertColaborador(Entidad);
-            if(model > 0)
+            if (!ModelState.IsValid)
             {
-                return RedirectToAction("ListadoColaborador");
+                ViewBag.ObjEmp = _daEmpresa.GetEmpresa();
+                return View(entidad);
             }
-            else
+
+            entidad.FechaRegistro = DateTime.Now;
+            var id = _daColaborador.InsertColaborador(entidad);
+            if (id > 0)
             {
-                return View(model);
+                return RedirectToAction(nameof(ListadoColaborador));
             }
+
+            ModelState.AddModelError(string.Empty, "No se pudo registrar el colaborador.");
+            ViewBag.ObjEmp = _daEmpresa.GetEmpresa();
+            return View(entidad);
         }
 
         public IActionResult Details(int id)
         {
-            //var ColabDet = new DAColaborador();
-            //var model = ColabDet.GetIdColaborador(id);
-            var model = DAColaborador.GetIdColaborador(id);
+            var model = _daColaborador.GetIdColaborador(id);
+            if (model == null)
+            {
+                return NotFound();
+            }
             return View(model);
         }
 
         public IActionResult Edit(int id)
         {
-            //var EmpDA = new DAEmpresa();
-            //ViewBag.Empresa=EmpDA.GetEmpresa();
-            ViewBag.Empresa = DAEmpresa.GetEmpresa();
-
-            //var ColabDA = new DAColaborador();
-            //var model = ColabDA.GetIdColaborador(id);
-            var model = DAColaborador.GetIdColaborador(id);
+            var model = _daColaborador.GetIdColaborador(id);
+            if (model == null)
+            {
+                return NotFound();
+            }
+            ViewBag.Empresa = _daEmpresa.GetEmpresa();
             return View(model);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Edit(Colaborador entity)
         {
-            entity.Modificacion = DateTime.Now;
-            //var ColEdit = new DAColaborador();
-            //var resultado = ColEdit.UpdateColaborador(entity);
-            var resultado = DAColaborador.UpdateColaborador(entity);
-            if (resultado)
+            if (!ModelState.IsValid)
             {
-                return RedirectToAction("ListadoColaborador");
-            }
-            else
-            {
+                ViewBag.Empresa = _daEmpresa.GetEmpresa();
                 return View(entity);
             }
+
+            entity.Modificacion = DateTime.Now;
+            if (_daColaborador.UpdateColaborador(entity))
+            {
+                return RedirectToAction(nameof(ListadoColaborador));
+            }
+
+            ModelState.AddModelError(string.Empty, "No se pudo actualizar el colaborador.");
+            ViewBag.Empresa = _daEmpresa.GetEmpresa();
+            return View(entity);
         }
 
         public IActionResult Delete(int id)
         {
-            //var model = new DAColaborador();
-            //var resultado = model.GetIdColaborador(id);
-            var resultado = DAColaborador.GetIdColaborador(id);
+            var resultado = _daColaborador.GetIdColaborador(id);
+            if (resultado == null)
+            {
+                return NotFound();
+            }
             return View(resultado);
         }
 
         [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
         {
-            //var DeleteColaborador = new DAColaborador();
-            //var model = DeleteColaborador.DeleteColaborador(id);
-            var model = DAColaborador.DeleteColaborador(id);
-            return RedirectToAction("ListadoColaborador");
+            _daColaborador.DeleteColaborador(id);
+            return RedirectToAction(nameof(ListadoColaborador));
         }
-
     }
 }

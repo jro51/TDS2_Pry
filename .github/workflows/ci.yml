@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # Se compila el proyecto de tests (que arrastra la app web) y no la .slnx completa,
+      # porque PIReportes (.rptproj de Reporting Services) solo compila en Visual Studio/Windows.
+      - name: Restore
+        run: dotnet restore TDS2_Clase01.Tests/TDS2_Clase01.Tests.csproj
+
+      - name: Build
+        run: dotnet build TDS2_Clase01.Tests/TDS2_Clase01.Tests.csproj --no-restore -c Release
+
+      - name: Test (con cobertura)
+        run: >
+          dotnet test TDS2_Clase01.Tests/TDS2_Clase01.Tests.csproj
+          --no-build -c Release
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+          --logger "trx;LogFileName=test-results.trx"
+
+      - name: Resumen de cobertura
+        if: always()
+        uses: danielpalme/ReportGenerator-GitHub-Action@5
+        with:
+          reports: TestResults/**/coverage.cobertura.xml
+          targetdir: CoverageReport
+          reporttypes: MarkdownSummaryGithub
+          # Solo se mide el código de la aplicación, no los tests ni las migraciones.
+          assemblyfilters: +TDS2_Clase01
+          classfilters: -TDS2_Clase01.Data.Migrations.*;-TDS2_Clase01.Tests.*
+
+      - name: Publicar resumen en la pestaña del job
+        if: always()
+        run: |
+          if [ -f CoverageReport/SummaryGithub.md ]; then
+            cat CoverageReport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Subir resultados de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            TestResults/**/*.trx
+            TestResults/**/coverage.cobertura.xml

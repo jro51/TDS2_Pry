@@ -1,4 +1,4 @@
-
+using System.Reflection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
@@ -8,8 +8,10 @@ using TDS2_Clase01.Data.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// La cadena de conexión NO va en el código: se lee de appsettings, user-secrets
+// (dotnet user-secrets set "ConnectionStrings:DefaultConnection" "...") o variables de entorno.
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -18,53 +20,50 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddAuthorization(options => options.AddPolicy("AllowLayoutJefe", policy => policy.RequireRole("Jefe")));
-
-builder.Services.AddAuthorization(options => options.AddPolicy("AllowLayoutAsistente", policy => policy.RequireRole("Asistente")));
-
-builder.Services.AddAuthorization(options => options.AddPolicy("AllowLayoutJefeAsistente", policy => policy.RequireRole("Jefe", "Asistente")));
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AllowLayoutJefe", policy => policy.RequireRole("Jefe"));
+    options.AddPolicy("AllowLayoutAsistente", policy => policy.RequireRole("Asistente"));
+    options.AddPolicy("AllowLayoutJefeAsistente", policy => policy.RequireRole("Jefe", "Asistente"));
+});
 
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddSingleton<IDAColaborador, DAColaborador>();
-builder.Services.AddSingleton<IDAEmpresa, DAEmpresa>();
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
+// Scoped: comparten el DbContext (que también es scoped) durante una misma petición.
+builder.Services.AddScoped<IDAColaborador, DAColaborador>();
+builder.Services.AddScoped<IDAEmpresa, DAEmpresa>();
 
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title="Colaborador API",
-        Version="v1"
+        Title = "Colaboradores API",
+        Version = "v1",
+        Description = "API REST para administrar colaboradores y consultar empresas. " +
+                      "Proyecto académico del curso TDS2 (ASP.NET Core, EF Core, SQL Server)."
     });
+
+    // Usa los comentarios XML (///) de controladores y modelos como documentación.
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 });
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularPolicy", policy =>
     {
-        policy.WithOrigins(
-            "http://localhost:4200"
-            )
-        .AllowAnyHeader()
-        .AllowAnyMethod();
+        policy.WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
-app.Use(async (context, next) =>
-{
-    context.Response.Headers.Append("Access-Control-Allow-Origin", "http://localhost:4200");
-    context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    context.Response.Headers.Append("Access-Control-Allow-Origin", "GET, POST, PUT, DELETE, OPTIONS");
-    if (context.Request.Method=="OPTIONS")
-    {
-        context.Response.StatusCode = 200;
-        return;
-    }
-    await next();
-});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -74,7 +73,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Colaboradores API v1");
-
     });
 }
 else
@@ -104,3 +102,6 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 app.Run();
+
+// Necesario para que los tests de integración (WebApplicationFactory<Program>) vean la clase Program.
+public partial class Program { }

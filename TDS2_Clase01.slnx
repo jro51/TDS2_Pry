@@ -11,4 +11,7 @@
   <Project Path="TDS2_Clase01/TDS2_Clase01.csproj">
     <BuildType Solution="DebugLocal|*" Project="Debug" />
   </Project>
+  <Project Path="TDS2_Clase01.Tests/TDS2_Clase01.Tests.csproj">
+    <BuildType Solution="DebugLocal|*" Project="Debug" />
+  </Project>
 </Solution>
